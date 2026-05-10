@@ -1,11 +1,16 @@
-import Contact from '../models/contact.model.js';
+import Contact from "../models/contact.model.js";
 
 /**
  * List contacts with cursor-based pagination, full-text search, and filters.
  * Uses cursor (_id) instead of skip/limit — O(log n) at any page depth.
  */
 export async function listContacts({
-  search, tags, createdAfter, createdBefore, cursor, limit = 20,
+  search,
+  tags,
+  createdAfter,
+  createdBefore,
+  cursor,
+  limit = 20,
 }) {
   const filter = {};
 
@@ -20,14 +25,13 @@ export async function listContacts({
 
   if (createdAfter || createdBefore) {
     filter.createdAt = {};
-    if (createdAfter)  filter.createdAt.$gte = new Date(createdAfter);
+    if (createdAfter) filter.createdAt.$gte = new Date(createdAfter);
     if (createdBefore) filter.createdAt.$lte = new Date(createdBefore);
   }
 
   const parsedLimit = Math.min(parseInt(limit) || 20, 100);
 
-  const contacts = await Contact
-    .find(filter)
+  const contacts = await Contact.find(filter)
     .sort({ _id: 1 })
     .limit(parsedLimit + 1) // fetch one extra to determine hasNextPage
     .lean();
@@ -36,10 +40,10 @@ export async function listContacts({
   if (hasNextPage) contacts.pop();
 
   return {
-    data:       contacts,
+    data: contacts,
     nextCursor: hasNextPage ? contacts[contacts.length - 1]._id : null,
     hasNextPage,
-    count:      contacts.length,
+    count: contacts.length,
   };
 }
 
@@ -49,11 +53,16 @@ export async function listContacts({
  */
 export function buildAudienceFilter(audienceFilter = {}) {
   const filter = {};
-  if (audienceFilter.tags?.length)
-    filter.tags = { $in: audienceFilter.tags };
+  if (audienceFilter.tags?.length) filter.tags = { $in: audienceFilter.tags };
   if (audienceFilter.createdAfter)
-    filter.createdAt = { ...(filter.createdAt || {}), $gte: new Date(audienceFilter.createdAfter) };
+    filter.createdAt = {
+      ...(filter.createdAt || {}),
+      $gte: new Date(audienceFilter.createdAfter),
+    };
   if (audienceFilter.createdBefore)
-    filter.createdAt = { ...(filter.createdAt || {}), $lte: new Date(audienceFilter.createdBefore) };
+    filter.createdAt = {
+      ...(filter.createdAt || {}),
+      $lte: new Date(audienceFilter.createdBefore),
+    };
   return filter;
 }

@@ -56,8 +56,13 @@ export function createUploadWorker() {
         failureCount += result.failed;
         batch         = [];
 
-        // Report progress back to BullMQ (visible in Bull dashboard)
-        await job.updateProgress(Math.round((totalRows / Math.max(totalRows, 1)) * 100));
+        // Update database with current progress (for frontend polling)
+        await UploadJob.findByIdAndUpdate(jobId, {
+          totalRows,
+          successCount,
+          failureCount,
+          errors: errors.slice(0, MAX_ERRORS),
+        });
       }
     }
 
@@ -67,6 +72,14 @@ export function createUploadWorker() {
       successCount += result.success;
       failureCount += result.failed;
     }
+
+    logger.info({ 
+      jobId, 
+      totalRows, 
+      successCount, 
+      failureCount,
+      errorsSampled: errors.length,
+    }, 'Upload job processing completed');
 
     await UploadJob.findByIdAndUpdate(jobId, {
       status: 'done',
@@ -109,12 +122,42 @@ export function createUploadWorker() {
 
 async function _flushBatch(batch) {
   try {
-    const res = await Contact.insertMany(batch, { ordered: false, rawResult: true });
-    return { success: res.insertedCount, failed: batch.length - res.insertedCount };
+    // insertMany returns array of inserted documents when successful
+    const result = await Contact.insertMany(batch, { ordered: false });
+    
+    logger.info({ 
+      batchSize: batch.length, 
+      inserted: result.length,
+    }, 'Batch insert successful - all new contacts');
+    
+    return { success: result.length, failed: 0 };
   } catch (err) {
-    // ordered:false throws on duplicates but still inserts non-duplicates
-    const inserted = err.result?.nInserted ?? 0;
-    return { success: inserted, failed: batch.length - inserted };
+    // When ordered:false, MongoDB throws MongoBulkWriteError but still inserts valid docs
+    // The error contains both successful inserts and write errors
+    
+    if (err.name === 'MongoBulkWriteError') {
+      // Calculate successful inserts: total batch - number of errors
+      const errorCount = err.writeErrors?.length ?? 0;
+      const successCount = batch.length - errorCount;
+      
+      logger.info({ 
+        batchSize: batch.length, 
+        successCount,
+        errorCount,
+        sampleError: err.writeErrors?.[0]?.errmsg,
+      }, 'Batch insert with some failures (duplicates or validation errors)');
+      
+      return { success: successCount, failed: errorCount };
+    }
+    
+    // For other errors, log and treat all as failed
+    logger.error({ 
+      err: err.message, 
+      errorName: err.name,
+      batchSize: batch.length 
+    }, 'Batch insert failed completely');
+    
+    return { success: 0, failed: batch.length };
   }
 }
 

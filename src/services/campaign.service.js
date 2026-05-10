@@ -42,7 +42,7 @@ export async function startCampaign(campaignId) {
   if (campaign.status !== 'draft')
     throw Object.assign(new Error(`Campaign is already ${campaign.status}`), { status: 409 });
 
-  const filter     = buildAudienceFilter(campaign.audienceFilter);
+  const filter = buildAudienceFilter(campaign.audienceFilter);
   const totalCount = await Contact.countDocuments(filter);
 
   if (totalCount === 0)

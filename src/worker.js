@@ -14,6 +14,7 @@ const uploadWorker   = createUploadWorker();
 logger.info('Workers started');
 logger.info('  ✓ campaign_send   (concurrency: 5)');
 logger.info('  ✓ upload_process  (concurrency: 2)');
+logger.debug({ logLevel: process.env.LOG_LEVEL }, 'Debug logging is enabled');
 
 // Graceful shutdown — close both workers cleanly
 const shutdown = async (signal) => {

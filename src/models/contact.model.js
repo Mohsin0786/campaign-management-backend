@@ -8,9 +8,6 @@ const contactSchema = new Schema({
   metadata: { type: Schema.Types.Mixed, default: {} },
 }, { timestamps: true });
 
-// Unique email — required for all contacts
-contactSchema.index({ email: 1 }, { unique: true });
-
 // Text search across name + email
 contactSchema.index({ name: 'text', email: 'text' });
 

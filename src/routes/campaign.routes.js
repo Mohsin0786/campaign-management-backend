@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { validate, schemas } from '../middleware/validate.js';
+import { validate, validateParams, schemas } from '../middleware/validate.js';
 import {
   createCampaign,
   listCampaigns,
@@ -29,7 +29,7 @@ router.get('/', async (req, res, next) => {
 });
 
 // GET /api/campaigns/:id
-router.get('/:id', async (req, res, next) => {
+router.get('/:id', validateParams(schemas.mongoId), async (req, res, next) => {
   try {
     const campaign = await getCampaignById(req.params.id);
     res.json(campaign);
@@ -37,7 +37,7 @@ router.get('/:id', async (req, res, next) => {
 });
 
 // POST /api/campaigns/:id/start
-router.post('/:id/start', async (req, res, next) => {
+router.post('/:id/start', validateParams(schemas.mongoId), async (req, res, next) => {
   try {
     const result = await startCampaign(req.params.id);
     res.json(result);
@@ -45,7 +45,7 @@ router.post('/:id/start', async (req, res, next) => {
 });
 
 // GET /api/campaigns/:id/analytics
-router.get('/:id/analytics', async (req, res, next) => {
+router.get('/:id/analytics', validateParams(schemas.mongoId), async (req, res, next) => {
   try {
     const data = await getCampaignAnalytics(req.params.id);
     res.json(data);
@@ -53,7 +53,7 @@ router.get('/:id/analytics', async (req, res, next) => {
 });
 
 // DELETE /api/campaigns/:id
-router.delete('/:id', async (req, res, next) => {
+router.delete('/:id', validateParams(schemas.mongoId), async (req, res, next) => {
   try {
     await deleteCampaign(req.params.id);
     res.status(204).send();

@@ -82,18 +82,19 @@ export async function getCampaignById(campaignId) {
 }
 
 export async function getCampaignAnalytics(campaignId) {
+  // Group by hour for cleaner analytics visualization
   // Hits { campaignId, createdAt } compound index
   const hourly = await Message.aggregate([
     {
       $match: {
-        campaignId: new mongoose.Types.ObjectId(campaignId),
+        campaignId: mongoose.Types.ObjectId.createFromHexString(campaignId),
         status:     { $in: ['sent', 'failed'] },
       },
     },
     {
       $group: {
         _id: {
-          // Use createdAt to leverage existing { campaignId, createdAt } index
+          // Group by hour - aggregates all messages sent in that hour
           hour:   { $dateToString: { format: '%Y-%m-%dT%H:00', date: '$createdAt' } },
           status: '$status',
         },

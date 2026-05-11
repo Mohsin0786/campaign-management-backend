@@ -13,6 +13,13 @@ const FAILURE_RATE = 0.10; // 10% simulated failure
 const BATCH_DELAY  = 100;  // ms artificial delay per batch
 const LOCK_TTL     = 300;  // seconds
 
+// Rate limiting: simulate real-world messaging provider constraints
+// Example: Twilio allows ~100 SMS/second, SendGrid ~1000 emails/second
+const RATE_LIMIT = {
+  maxMessagesPerSecond: 500,  // Max 500 messages per second
+  maxMessagesPerMinute: 20000, // Max 20k messages per minute
+};
+
 export function createCampaignWorker() {
   const worker = new Worker('campaign_send', async (job) => {
     const { campaignId } = job.data;
@@ -40,14 +47,51 @@ export function createCampaignWorker() {
       const cursor = Contact.find(filter).select('_id').lean().cursor();
       let batch     = [];
       let processed = 0;
+      let messagesThisSecond = 0;
+      let messagesThisMinute = 0;
+      let secondStart = Date.now();
+      let minuteStart = Date.now();
 
       for await (const contact of cursor) {
         batch.push(contact._id);
 
         if (batch.length >= BATCH_SIZE) {
+          // Rate limiting: enforce max messages per second/minute
+          const now = Date.now();
+          
+          // Reset counters if time window passed
+          if (now - secondStart >= 1000) {
+            messagesThisSecond = 0;
+            secondStart = now;
+          }
+          if (now - minuteStart >= 60000) {
+            messagesThisMinute = 0;
+            minuteStart = now;
+          }
+
+          // Check if we've hit rate limits
+          if (messagesThisSecond + batch.length > RATE_LIMIT.maxMessagesPerSecond) {
+            const waitTime = 1000 - (now - secondStart);
+            logger.debug({ campaignId, waitTime }, 'Rate limit: waiting for next second');
+            await new Promise(r => setTimeout(r, waitTime));
+            messagesThisSecond = 0;
+            secondStart = Date.now();
+          }
+
+          if (messagesThisMinute + batch.length > RATE_LIMIT.maxMessagesPerMinute) {
+            const waitTime = 60000 - (now - minuteStart);
+            logger.warn({ campaignId, waitTime }, 'Rate limit: waiting for next minute');
+            await new Promise(r => setTimeout(r, waitTime));
+            messagesThisMinute = 0;
+            minuteStart = Date.now();
+          }
+
           await _processBatch(campaignId, batch);
           processed += batch.length;
-          batch      = [];
+          messagesThisSecond += batch.length;
+          messagesThisMinute += batch.length;
+          batch = [];
+          
           await job.updateProgress(
             Math.round((processed / campaign.totalCount) * 100),
           );

@@ -29,7 +29,7 @@ function printExplain(label, explain) {
 // Q1: Contact text search + tag filter
 try {
   const q1 = await Contact
-    .find({ $text: { $search: 'James' }, tags: 'vip' })
+    .find({ $text: { $search: 'User ' }, tags: 'vip' })
     .sort({ createdAt: -1 })
     .explain('executionStats');
   printExplain('Q1: Contact text search + tag filter', q1);
@@ -129,7 +129,7 @@ try {
 // Q7: Contact search by email
 try {
   const q7 = await Contact
-    .find({ email: 'test@example.com' })
+    .find({ email: 'user1@yahoo.com' })
     .explain('executionStats');
   printExplain('Q7: Contact lookup by email (unique index)', q7);
 } catch (e) { console.log('Q7 skipped:', e.message, '\n'); }

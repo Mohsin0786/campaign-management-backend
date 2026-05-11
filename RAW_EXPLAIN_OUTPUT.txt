@@ -1,0 +1,503 @@
+━━ Q1: Contact text search + tag filter
+   Index used:     name_text_email_text
+   Keys examined:  100000
+   Docs examined:  200000
+   Docs returned:  33333
+   Exec time:      301ms
+   Stage:          SORT
+
+━━ Q2: Audience selection by tags
+   Index used:     tags_1_createdAt_-1
+   Keys examined:  66668
+   Docs examined:  50000
+   Docs returned:  50000
+   Exec time:      101ms
+   Stage:          PROJECTION_SIMPLE
+
+━━ Q3: Cursor-based paginated contact listing
+   Index used:     _id_
+   Keys examined:  21
+   Docs examined:  21
+   Docs returned:  21
+   Exec time:      0ms
+   Stage:          LIMIT
+
+━━ Q4: Campaign stats aggregation
+{
+  "explainVersion": "2",
+  "queryPlanner": {
+    "namespace": "test.messages",
+    "parsedQuery": {
+      "$and": [
+        {
+          "campaignId": {
+            "$eq": "6a01bf56c9e646690bb5486e"
+          }
+        },
+        {
+          "status": {
+            "$in": [
+              "failed",
+              "sent"
+            ]
+          }
+        }
+      ]
+    },
+    "indexFilterSet": false,
+    "queryHash": "BD345936",
+    "planCacheShapeHash": "BD345936",
+    "planCacheKey": "F359AD1B",
+    "optimizationTimeMillis": 1,
+    "optimizedPipeline": true,
+    "maxIndexedOrSolutionsReached": false,
+    "maxIndexedAndSolutionsReached": false,
+    "maxScansToExplodeReached": false,
+    "prunedSimilarIndexes": false,
+    "winningPlan": {
+      "isCached": false,
+      "queryPlan": {
+        "stage": "GROUP",
+        "planNodeId": 3,
+        "inputStage": {
+          "stage": "PROJECTION_COVERED",
+          "planNodeId": 2,
+          "transformBy": {
+            "status": true,
+            "_id": false
+          },
+          "inputStage": {
+            "stage": "IXSCAN",
+            "planNodeId": 1,
+            "keyPattern": {
+              "campaignId": 1,
+              "status": 1
+            },
+            "indexName": "campaignId_1_status_1",
+            "isMultiKey": false,
+            "multiKeyPaths": {
+              "campaignId": [],
+              "status": []
+            },
+            "isUnique": false,
+            "isSparse": false,
+            "isPartial": false,
+            "indexVersion": 2,
+            "direction": "forward",
+            "indexBounds": {
+              "campaignId": [
+                "[ObjectId('6a01bf56c9e646690bb5486e'), ObjectId('6a01bf56c9e646690bb5486e')]"
+              ],
+              "status": [
+                "[\"failed\", \"failed\"]",
+                "[\"sent\", \"sent\"]"
+              ]
+            }
+          }
+        }
+      },
+      "slotBasedPlan": {
+        "slots": "$$RESULT=s12 env: { s5 = [{\"l\" : KS(646A01BF56C9E646690BB5486E3C6661696C6564000104), \"h\" : KS(646A01BF56C9E646690BB5486E3C6661696C656400FE04)}, {\"l\" : KS(646A01BF56C9E646690BB5486E3C73656E74000104), \"h\" : KS(646A01BF56C9E646690BB5486E3C73656E7400FE04)}] }",
+        "stages": "[3] project [s12 = newBsonObj(\"_id\", s9, \"count\", s11)] \n[3] project [s11 = (convert ( s10, int32) ?: s10)] \n[3] group [s9] [s10 = count()] spillSlots[s8] mergingExprs[sum(s8)] \n[3] project [s9 = (s1 ?: null)] \n[1] nlj inner [] [s3, s4] \n    left \n        [1] project [s3 = getField(s6, \"l\"), s4 = getField(s6, \"h\")] \n        [1] unwind s6 s7 s5 false \n        [1] limit 1ll \n        [1] coscan \n    right \n        [1] ixseek s3 s4 none s2 none none [s1 = 1] @\"f2417e9c-4c42-4b99-95e9-26a7aa12b5df\" @\"campaignId_1_status_1\" true \n"
+      }
+    },
+    "rejectedPlans": [
+      {
+        "isCached": false,
+        "stage": "PROJECTION_SIMPLE",
+        "transformBy": {
+          "status": 1,
+          "_id": 0
+        },
+        "inputStage": {
+          "stage": "FETCH",
+          "filter": {
+            "status": {
+              "$in": [
+                "failed",
+                "sent"
+              ]
+            }
+          },
+          "inputStage": {
+            "stage": "IXSCAN",
+            "keyPattern": {
+              "campaignId": 1,
+              "contactId": 1
+            },
+            "indexName": "campaignId_1_contactId_1",
+            "isMultiKey": false,
+            "multiKeyPaths": {
+              "campaignId": [],
+              "contactId": []
+            },
+            "isUnique": true,
+            "isSparse": false,
+            "isPartial": false,
+            "indexVersion": 2,
+            "direction": "forward",
+            "indexBounds": {
+              "campaignId": [
+                "[ObjectId('6a01bf56c9e646690bb5486e'), ObjectId('6a01bf56c9e646690bb5486e')]"
+              ],
+              "contactId": [
+                "[MinKey, MaxKey]"
+              ]
+            }
+          }
+        }
+      },
+      {
+        "isCached": false,
+        "stage": "PROJECTION_SIMPLE",
+        "transformBy": {
+          "status": 1,
+          "_id": 0
+        },
+        "inputStage": {
+          "stage": "FETCH",
+          "filter": {
+            "status": {
+              "$in": [
+                "failed",
+                "sent"
+              ]
+            }
+          },
+          "inputStage": {
+            "stage": "IXSCAN",
+            "keyPattern": {
+              "campaignId": 1,
+              "createdAt": -1
+            },
+            "indexName": "campaignId_1_createdAt_-1",
+            "isMultiKey": false,
+            "multiKeyPaths": {
+              "campaignId": [],
+              "createdAt": []
+            },
+            "isUnique": false,
+            "isSparse": false,
+            "isPartial": false,
+            "indexVersion": 2,
+            "direction": "forward",
+            "indexBounds": {
+              "campaignId": [
+                "[ObjectId('6a01bf56c9e646690bb5486e'), ObjectId('6a01bf56c9e646690bb5486e')]"
+              ],
+              "createdAt": [
+                "[MaxKey, MinKey]"
+              ]
+            }
+          }
+        }
+      },
+      {
+        "isCached": false,
+        "stage": "PROJECTION_SIMPLE",
+        "transformBy": {
+          "status": 1,
+          "_id": 0
+        },
+        "inputStage": {
+          "stage": "FETCH",
+          "filter": {
+            "campaignId": {
+              "$eq": "6a01bf56c9e646690bb5486e"
+            }
+          },
+          "inputStage": {
+            "stage": "IXSCAN",
+            "keyPattern": {
+              "status": 1,
+              "retryCount": 1
+            },
+            "indexName": "status_1_retryCount_1",
+            "isMultiKey": false,
+            "multiKeyPaths": {
+              "status": [],
+              "retryCount": []
+            },
+            "isUnique": false,
+            "isSparse": false,
+            "isPartial": false,
+            "indexVersion": 2,
+            "direction": "forward",
+            "indexBounds": {
+              "status": [
+                "[\"failed\", \"failed\"]",
+                "[\"sent\", \"sent\"]"
+              ],
+              "retryCount": [
+                "[MinKey, MaxKey]"
+              ]
+            }
+          }
+        }
+      }
+    ]
+  },
+  "executionStats": {
+    "executionSuccess": true,
+    "nReturned": 2,
+    "executionTimeMillis": 80,
+    "totalKeysExamined": 100000,
+    "totalDocsExamined": 0,
+    "executionStages": {
+      "stage": "project",
+      "planNodeId": 3,
+      "nReturned": 2,
+      "executionTimeMillisEstimate": 80,
+      "opens": 1,
+      "closes": 1,
+      "saveState": 5,
+      "restoreState": 5,
+      "isEOF": 1,
+      "projections": {
+        "12": "newBsonObj(\"_id\", s9, \"count\", s11) "
+      },
+      "inputStage": {
+        "stage": "project",
+        "planNodeId": 3,
+        "nReturned": 2,
+        "executionTimeMillisEstimate": 80,
+        "opens": 1,
+        "closes": 1,
+        "saveState": 5,
+        "restoreState": 5,
+        "isEOF": 1,
+        "projections": {
+          "11": "(convert ( s10, int32) ?: s10) "
+        },
+        "inputStage": {
+          "stage": "group",
+          "planNodeId": 3,
+          "nReturned": 2,
+          "executionTimeMillisEstimate": 80,
+          "opens": 1,
+          "closes": 1,
+          "saveState": 5,
+          "restoreState": 5,
+          "isEOF": 1,
+          "groupBySlots": [
+            9
+          ],
+          "expressions": {
+            "10": "count() ",
+            "initExprs": {
+              "10": null
+            }
+          },
+          "mergingExprs": {
+            "8": "sum(s8) "
+          },
+          "usedDisk": false,
+          "spills": 0,
+          "spilledBytes": 0,
+          "spilledRecords": 0,
+          "spilledDataStorageSize": 0,
+          "inputStage": {
+            "stage": "project",
+            "planNodeId": 3,
+            "nReturned": 100000,
+            "executionTimeMillisEstimate": 59,
+            "opens": 1,
+            "closes": 1,
+            "saveState": 5,
+            "restoreState": 5,
+            "isEOF": 1,
+            "projections": {
+              "9": "(s1 ?: null) "
+            },
+            "inputStage": {
+              "stage": "nlj",
+              "planNodeId": 1,
+              "nReturned": 100000,
+              "executionTimeMillisEstimate": 59,
+              "opens": 1,
+              "closes": 1,
+              "saveState": 5,
+              "restoreState": 5,
+              "isEOF": 1,
+              "totalDocsExamined": 0,
+              "totalKeysExamined": 100000,
+              "collectionScans": 0,
+              "collectionSeeks": 0,
+              "indexScans": 0,
+              "indexSeeks": 2,
+              "indexesUsed": [
+                "campaignId_1_status_1"
+              ],
+              "innerOpens": 2,
+              "innerCloses": 1,
+              "outerProjects": [],
+              "outerCorrelated": [
+                3,
+                4
+              ],
+              "outerStage": {
+                "stage": "project",
+                "planNodeId": 1,
+                "nReturned": 2,
+                "executionTimeMillisEstimate": 0,
+                "opens": 1,
+                "closes": 1,
+                "saveState": 5,
+                "restoreState": 5,
+                "isEOF": 1,
+                "projections": {
+                  "3": "getField(s6, \"l\") ",
+                  "4": "getField(s6, \"h\") "
+                },
+                "inputStage": {
+                  "stage": "unwind",
+                  "planNodeId": 1,
+                  "nReturned": 2,
+                  "executionTimeMillisEstimate": 0,
+                  "opens": 1,
+                  "closes": 1,
+                  "saveState": 5,
+                  "restoreState": 5,
+                  "isEOF": 1,
+                  "inputSlot": 5,
+                  "outSlot": 6,
+                  "outIndexSlot": 7,
+                  "preserveNullAndEmptyArrays": 0,
+                  "inputStage": {
+                    "stage": "limit",
+                    "planNodeId": 1,
+                    "nReturned": 1,
+                    "executionTimeMillisEstimate": 0,
+                    "opens": 1,
+                    "closes": 1,
+                    "saveState": 5,
+                    "restoreState": 5,
+                    "isEOF": 1,
+                    "limit": 1,
+                    "inputStage": {
+                      "stage": "coscan",
+                      "planNodeId": 1,
+                      "nReturned": 1,
+                      "executionTimeMillisEstimate": 0,
+                      "opens": 1,
+                      "closes": 1,
+                      "saveState": 5,
+                      "restoreState": 5,
+                      "isEOF": 0
+                    }
+                  }
+                }
+              },
+              "innerStage": {
+                "stage": "ixseek",
+                "planNodeId": 1,
+                "nReturned": 100000,
+                "executionTimeMillisEstimate": 57,
+                "opens": 2,
+                "closes": 1,
+                "saveState": 5,
+                "restoreState": 5,
+                "isEOF": 1,
+                "indexName": "campaignId_1_status_1",
+                "keysExamined": 100000,
+                "seeks": 2,
+                "numReads": 100002,
+                "recordIdSlot": 2,
+                "outputSlots": [
+                  1
+                ],
+                "indexKeysToInclude": "00000000000000000000000000000010",
+                "seekKeyLow": "s3 ",
+                "seekKeyHigh": "s4 "
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "queryShapeHash": "34AF67DA7A07AA96C3B0A505C46C7C784EC4AFF3C94849A10A2445D9990538CC",     
+  "command": {
+    "aggregate": "messages",
+    "pipeline": [
+      {
+        "$match": {
+          "campaignId": "6a01bf56c9e646690bb5486e",
+          "status": {
+            "$in": [
+              "sent",
+              "failed"
+            ]
+          }
+        }
+      },
+      {
+        "$group": {
+          "_id": "$status",
+          "count": {
+            "$sum": 1
+          }
+        }
+      }
+    ],
+    "cursor": {},
+    "$db": "test"
+  },
+  "serverInfo": {
+    "host": "ac-bvl2vfb-shard-00-02.aonsdtm.mongodb.net",
+    "port": 27017,
+    "version": "8.0.23",
+    "gitVersion": "ccf0d81588377542f00eeecf1b1ffbc095b1eeff"
+  },
+  "serverParameters": {
+    "internalQueryFacetBufferSizeBytes": 104857600,
+    "internalQueryFacetMaxOutputDocSizeBytes": 104857600,
+    "internalLookupStageIntermediateDocumentMaxSizeBytes": 16793600,
+    "internalDocumentSourceGroupMaxMemoryBytes": 104857600,
+    "internalQueryMaxBlockingSortMemoryUsageBytes": 33554432,
+    "internalQueryProhibitBlockingMergeOnMongoS": 0,
+    "internalQueryMaxAddToSetBytes": 104857600,
+    "internalDocumentSourceSetWindowFieldsMaxMemoryBytes": 104857600,
+    "internalQueryFrameworkControl": "trySbeRestricted",
+    "internalQueryPlannerIgnoreIndexWithCollationForRegex": 1
+  },
+  "ok": 1,
+  "$clusterTime": {
+    "clusterTime": {
+      "$timestamp": "7638600504167104513"
+    },
+    "signature": {
+      "hash": "af/llZM+AQ02EtVWumphmo0qrBQ=",
+      "keyId": {
+        "low": 2,
+        "high": 1763496279,
+        "unsigned": false
+      }
+    }
+  },
+  "operationTime": {
+    "$timestamp": "7638600504167104513"
+  }
+}
+
+━━ Q5: Dashboard campaign list by status
+   Index used:     status_1_createdAt_-1
+   Keys examined:  0
+   Docs examined:  0
+   Docs returned:  0
+   Exec time:      0ms
+   Stage:          FETCH
+
+━━ Q6: Analytics — messages sent over time
+   Index used:    N/A
+   Docs examined: 100000
+   Docs returned: 2
+   Exec time:     252ms
+
+━━ Q7: Contact lookup by email (unique index)
+   Index used:     email_1
+   Keys examined:  1
+   Docs examined:  1
+   Docs returned:  1
+   Exec time:      0ms
+   Stage:          EXPRESS_IXSCAN

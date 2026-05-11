@@ -14,8 +14,18 @@ export async function listContacts({
 }) {
   const filter = {};
 
-  // Uses { name: "text", email: "text" } index
-  if (search) filter.$text = { $search: search };
+  // Smart search: exact match for emails, text search for names
+  if (search) {
+    const isEmail = search.includes('@');
+    
+    if (isEmail) {
+      // Exact email match (case-insensitive)
+      filter.email = search.toLowerCase().trim();
+    } else {
+      // Text search for names and partial emails
+      filter.$text = { $search: search };
+    }
+  }
 
   // Hits { tags, createdAt } compound multikey index
   if (tags?.length) filter.tags = { $in: tags };
@@ -31,8 +41,19 @@ export async function listContacts({
 
   const parsedLimit = Math.min(parseInt(limit) || 20, 100);
 
-  const contacts = await Contact.find(filter)
-    .sort({ _id: 1 })
+  // Only use text score sorting when using $text search
+  const isUsingTextSearch = search && !search.includes('@');
+  
+  const sortCriteria = isUsingTextSearch
+    ? { score: { $meta: "textScore" }, _id: 1 }
+    : { _id: 1 };
+
+  const projection = isUsingTextSearch
+    ? { score: { $meta: "textScore" } }
+    : {};
+
+  const contacts = await Contact.find(filter, projection)
+    .sort(sortCriteria)
     .limit(parsedLimit + 1) // fetch one extra to determine hasNextPage
     .lean();
 

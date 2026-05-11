@@ -6,6 +6,7 @@ import {
   getCampaignById,
   startCampaign,
   getCampaignAnalytics,
+  deleteCampaign,
 } from '../services/campaign.service.js';
 
 const router = Router();
@@ -48,6 +49,14 @@ router.get('/:id/analytics', async (req, res, next) => {
   try {
     const data = await getCampaignAnalytics(req.params.id);
     res.json(data);
+  } catch (err) { next(err); }
+});
+
+// DELETE /api/campaigns/:id
+router.delete('/:id', async (req, res, next) => {
+  try {
+    await deleteCampaign(req.params.id);
+    res.status(204).send();
   } catch (err) { next(err); }
 });
 

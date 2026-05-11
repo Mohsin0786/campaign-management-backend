@@ -113,3 +113,25 @@ export async function getCampaignAnalytics(campaignId) {
 
   return Object.values(map);
 }
+
+export async function deleteCampaign(campaignId) {
+  const campaign = await Campaign.findById(campaignId);
+  
+  if (!campaign)
+    throw Object.assign(new Error('Campaign not found'), { status: 404 });
+  
+  // Only allow deletion of draft campaigns
+  if (campaign.status !== 'draft')
+    throw Object.assign(
+      new Error('Only draft campaigns can be deleted'), 
+      { status: 400 }
+    );
+  
+  // Delete the campaign
+  await Campaign.findByIdAndDelete(campaignId);
+  
+  // Clear cache if exists
+  await redis.del(`campaign:stats:${campaignId}`);
+  
+  return { deleted: true };
+}
